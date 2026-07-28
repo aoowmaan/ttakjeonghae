@@ -3,7 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://ttak.fun"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://ttakjeonghae.vercel.app"),
   title: { default: "딱정해 — 고민은 짧게, 기억은 길게", template: "%s | 딱정해" },
   description: "친구·커플·여행에서 누가 낼지, 무엇을 먹을지, 어디로 갈지 가볍고 공정하게 정하는 무료 게임과 테스트.",
   keywords: ["결정 룰렛", "랜덤 뽑기", "밸런스게임", "이상형 월드컵", "심리테스트", "여행 게임", "N빵 계산기"],
