@@ -17,7 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: game.title,
     description: game.description,
-    openGraph: { title: `${game.title} | 딱정해`, description: game.description, type: "website" },
+    alternates: { canonical: `/play/${game.slug}` },
+    openGraph: { title: `${game.title} | 딱정해`, description: game.description, type: "website", url: `/play/${game.slug}` },
   };
 }
 
@@ -33,6 +34,9 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
     description: game.description,
     applicationCategory: "GameApplication",
     operatingSystem: "Any",
+    inLanguage: "ko-KR",
+    isAccessibleForFree: true,
+    publisher: { "@type": "Organization", name: "딱정해" },
     offers: { "@type": "Offer", price: "0", priceCurrency: "KRW" },
   };
   return (

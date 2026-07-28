@@ -4,33 +4,69 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Game, QuizResult } from "@/data/games";
 
 const starterNames = ["나", "민지", "도윤", "서준"];
-const shuffle = <T,>(items: T[]) => [...items].sort(() => Math.random() - 0.5);
+const randomIndex = (max: number) => {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const range = 0x1_0000_0000;
+    const limit = Math.floor(range / max) * max;
+    let value = range;
+    while (value >= limit) value = crypto.getRandomValues(new Uint32Array(1))[0];
+    return value % max;
+  }
+  return Math.floor(Math.random() * max);
+};
+const shuffle = <T,>(items: T[]) => {
+  const next = [...items];
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = randomIndex(index + 1);
+    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+  }
+  return next;
+};
 const tapFeedback = (duration = 12) => {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(duration);
 };
+
+function Celebration() {
+  return (
+    <div className="celebration" aria-hidden>
+      {Array.from({ length: 12 }, (_, index) => (
+        <i
+          key={index}
+          style={{
+            left: `${7 + index * 7.8}%`,
+            animationDelay: `${index * -0.055}s`,
+            "--piece-shift": `${(index - 6) * 4}px`,
+          } as React.CSSProperties}
+        />
+      ))}
+    </div>
+  );
+}
 
 function NameEditor({
   values,
   onChange,
   label = "참가자",
   placeholder = "이름 입력",
+  max = 24,
 }: {
   values: string[];
   onChange: (values: string[]) => void;
   label?: string;
   placeholder?: string;
+  max?: number;
 }) {
   const [draft, setDraft] = useState("");
   const add = () => {
     const value = draft.trim();
-    if (!value || values.length >= 24 || values.includes(value)) return;
+    if (!value || values.length >= max || values.includes(value)) return;
     tapFeedback();
     onChange([...values, value]);
     setDraft("");
   };
   return (
     <div className="name-editor">
-      <div className="field-label"><span>{label}</span><b>{values.length}/24</b></div>
+      <div className="field-label"><span>{label}</span><b>{values.length}/{max}</b></div>
       <div className="chips">
         {values.map((value, index) => (
           <button key={`${value}-${index}`} className="name-chip" onClick={() => { tapFeedback(); onChange(values.filter((_, i) => i !== index)); }} aria-label={`${value} 삭제`}>
@@ -67,15 +103,32 @@ function ResultActions({ text, onReset }: { text: string; onReset: () => void })
     tapFeedback();
     const shareData = { title: "딱정해 결과", text: `${text}\n딱정해에서 함께 해봐요.`, url: window.location.href };
     if (navigator.share) {
-      await navigator.share(shareData).catch(() => undefined);
-      return;
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
     }
-    await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+    const copyValue = `${shareData.text}\n${shareData.url}`;
+    try {
+      await navigator.clipboard.writeText(copyValue);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = copyValue;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
   };
   return (
     <div className="result-actions" ref={actionsRef}>
+      <Celebration />
       <button className="button-primary" onClick={share}>{copied ? "복사했어요!" : "결과 공유하기"} <span>↗</span></button>
       <button className="button-ghost" onClick={() => { tapFeedback(); onReset(); }}>다시 하기</button>
     </div>
@@ -172,7 +225,7 @@ function CardsGame({ game }: { game: Game }) {
               className={`pick-card ${isFlipped ? "flipped" : ""} ${choosing === index ? "choosing" : ""} ${isFlipped && isWinner ? "winner" : ""}`}
               key={`${name}-${index}`}
               onClick={() => revealCard(index)}
-              disabled={isFlipped || choosing !== null}
+              disabled={isFlipped || choosing !== null || Boolean(winner && flipped.some((flippedIndex) => cards[flippedIndex] === winner))}
               aria-label={`${index + 1}번 카드${choosing === index ? " 여는 중" : ""}`}
             >
               <span className="card-face card-back" aria-hidden={isFlipped}><i>딱!</i><small>{index + 1}</small></span>
@@ -212,8 +265,12 @@ function WheelGame({ game }: { game: Game }) {
   const spin = () => {
     if (options.length < 2 || spinning) return;
     tapFeedback(20);
-    const index = Math.floor(Math.random() * options.length);
-    const next = rotation + 1440 + (360 - (index * 360) / options.length);
+    const index = randomIndex(options.length);
+    const segmentAngle = 360 / options.length;
+    const targetAngle = (360 - (index + 0.5) * segmentAngle + 360) % 360;
+    const currentAngle = ((rotation % 360) + 360) % 360;
+    const delta = (targetAngle - currentAngle + 360) % 360;
+    const next = rotation + 1440 + delta;
     setRotation(next);
     setSpinning(true);
     setResult(null);
@@ -224,7 +281,7 @@ function WheelGame({ game }: { game: Game }) {
   return (
     <div className="engine-panel wheel-layout">
       <div>
-        <NameEditor values={options} onChange={setOptions} label="후보" placeholder="후보 입력" />
+        <NameEditor values={options} onChange={setOptions} label="후보" placeholder="후보 입력" max={8} />
         <button className="button-primary button-full" onClick={spin} disabled={options.length < 2 || spinning}>{spinning ? "돌아가는 중…" : "룰렛 돌리기"} <span>↻</span></button>
       </div>
       <div className={`wheel-stage ${spinning ? "is-spinning" : ""}`}>
@@ -235,12 +292,22 @@ function WheelGame({ game }: { game: Game }) {
           onClick={spin}
           aria-label="룰렛 돌리기"
         >
-          <span>딱!</span>
+          <span className="wheel-center">딱!</span>
+          <span className="wheel-segment-labels" aria-hidden>
+            {options.slice(0, 8).map((option, index) => (
+              <i
+                key={option}
+                style={{
+                  "--label-angle": `${(index + 0.5) * 360 / options.length}deg`,
+                  "--label-counter-angle": `${-(index + 0.5) * 360 / options.length}deg`,
+                } as React.CSSProperties}
+              >
+                {option.length > 7 ? `${option.slice(0, 7)}…` : option}
+              </i>
+            ))}
+          </span>
         </button>
         {spinning && <div className="wheel-suspense" aria-live="polite">운명이 고르는 중…</div>}
-        <div className="wheel-labels" aria-hidden>
-          {options.slice(0, 6).map((option) => <span key={option}>{option}</span>)}
-        </div>
       </div>
       {result && (
         <div className="inline-result full-row" aria-live="polite">
@@ -336,6 +403,12 @@ function BalanceGame({ game }: { game: Game }) {
         <p className="result-kicker">당신의 선택이 완성됐어요</p>
         <h3>{left === choices.length - left ? "완벽한 균형 감각의 소유자" : left > choices.length / 2 ? "왼쪽 선택에 마음이 더 움직였어요" : "오른쪽 선택에 마음이 더 움직였어요"}</h3>
         <p>친구에게 같은 게임을 보내고 몇 개나 같은지 비교해 보세요.</p>
+        <div className="choice-recap">
+          {choices.slice(-4).map((choice, choiceIndex) => {
+            const promptIndex = Math.max(0, choices.length - 4) + choiceIndex;
+            return <span key={promptIndex}>{choice === 0 ? prompts[promptIndex]?.a : prompts[promptIndex]?.b}</span>;
+          })}
+        </div>
         <ResultActions text={`${game.title}: ${left} 대 ${choices.length - left}`} onReset={() => { setIndex(0); setChoices([]); setSelected(null); }} />
       </div>
     );
@@ -359,19 +432,25 @@ function QuizGame({ game }: { game: Game }) {
   const [index, setIndex] = useState(0);
   const [scores, setScores] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
-  const answer = (points: Record<string, number>) => {
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const answer = (points: Record<string, number>, answerIndex: number) => {
+    if (selectedAnswer !== null) return;
     tapFeedback();
-    const next = { ...scores };
-    Object.entries(points).forEach(([key, value]) => { next[key] = (next[key] ?? 0) + value; });
-    if (index === questions.length - 1) {
-      const winner = Object.entries(next).sort((a, b) => b[1] - a[1])[0]?.[0];
-      setResult(game.results?.[winner] ?? Object.values(game.results ?? {})[0]);
-    } else {
-      setScores(next);
-      setIndex(index + 1);
-    }
+    setSelectedAnswer(answerIndex);
+    window.setTimeout(() => {
+      const next = { ...scores };
+      Object.entries(points).forEach(([key, value]) => { next[key] = (next[key] ?? 0) + value; });
+      if (index === questions.length - 1) {
+        const winner = Object.entries(next).sort((a, b) => b[1] - a[1])[0]?.[0];
+        setResult(game.results?.[winner] ?? Object.values(game.results ?? {})[0]);
+      } else {
+        setScores(next);
+        setIndex((current) => current + 1);
+      }
+      setSelectedAnswer(null);
+    }, 460);
   };
-  const reset = () => { setIndex(0); setScores({}); setResult(null); };
+  const reset = () => { setIndex(0); setScores({}); setResult(null); setSelectedAnswer(null); };
   if (result) {
     return (
       <div className="engine-panel quiz-result">
@@ -391,7 +470,16 @@ function QuizGame({ game }: { game: Game }) {
       <div className="progress-track"><span style={{ width: `${(index / questions.length) * 100}%` }} /></div>
       <div className="quiz-stage">
         <h3>{question.question}</h3>
-        <div>{question.answers.map((item, answerIndex) => <button key={item.label} onClick={() => answer(item.scores)}><b>{String.fromCharCode(65 + answerIndex)}</b><span>{item.label}</span><i>→</i></button>)}</div>
+        <div>{question.answers.map((item, answerIndex) => (
+          <button
+            key={item.label}
+            className={selectedAnswer === answerIndex ? "selected" : ""}
+            disabled={selectedAnswer !== null}
+            onClick={() => answer(item.scores, answerIndex)}
+          >
+            <b>{String.fromCharCode(65 + answerIndex)}</b><span>{item.label}</span><i>{selectedAnswer === answerIndex ? "✓" : "→"}</i>
+          </button>
+        ))}</div>
       </div>
     </div>
   );
@@ -399,38 +487,108 @@ function QuizGame({ game }: { game: Game }) {
 
 function WorldCupGame({ game }: { game: Game }) {
   const initial = game.options ?? [];
-  const [round, setRound] = useState(initial);
+  const [candidates, setCandidates] = useState(initial);
+  const [status, setStatus] = useState<"setup" | "seeding" | "playing" | "done">("setup");
+  const [round, setRound] = useState<string[]>([]);
   const [nextRound, setNextRound] = useState<string[]>([]);
   const [match, setMatch] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
+  const [runnerUp, setRunnerUp] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(0);
+  const [bracketTotal, setBracketTotal] = useState(0);
+  const bracketSize = candidates.length >= 16 ? 16 : candidates.length >= 8 ? 8 : candidates.length >= 4 ? 4 : 0;
+  const start = () => {
+    if (!bracketSize) return;
+    tapFeedback(20);
+    setStatus("seeding");
+    setWinner(null);
+    setRunnerUp(null);
+    setCompleted(0);
+    setSelected(null);
+    setNextRound([]);
+    setMatch(0);
+    const seeded = shuffle(candidates).slice(0, bracketSize);
+    setBracketTotal(seeded.length - 1);
+    window.setTimeout(() => {
+      setRound(seeded);
+      setStatus("playing");
+    }, 1650);
+  };
   const pick = (choice: string) => {
     if (selected) return;
     tapFeedback();
     setSelected(choice);
     window.setTimeout(() => {
       const next = [...nextRound, choice];
+      setCompleted((current) => current + 1);
       if (match + 2 >= round.length) {
-        if (next.length === 1) setWinner(choice);
+        if (next.length === 1) {
+          setRunnerUp(round.find((item) => item !== choice) ?? null);
+          setWinner(choice);
+          setStatus("done");
+          tapFeedback(35);
+        }
         else { setRound(next); setNextRound([]); setMatch(0); }
       } else setMatch(match + 2);
       setSelected(null);
     }, 560);
   };
-  const reset = () => { setRound(initial); setNextRound([]); setMatch(0); setWinner(null); setSelected(null); };
-  if (winner) {
+  const reset = () => {
+    setStatus("setup");
+    setRound([]);
+    setNextRound([]);
+    setMatch(0);
+    setWinner(null);
+    setRunnerUp(null);
+    setSelected(null);
+    setCompleted(0);
+  };
+  if (status === "setup") {
     return (
-      <div className="engine-panel quiz-result">
+      <div className="engine-panel worldcup-setup">
+        <div className="worldcup-intro">
+          <span>{candidates.length}명의 후보</span>
+          <h3>내 마음의 토너먼트를 시작합니다</h3>
+          <p>후보를 직접 바꿀 수 있어요. 4강·8강·16강 중 가능한 가장 큰 대진으로 무작위 편성됩니다.</p>
+        </div>
+        <NameEditor values={candidates} onChange={setCandidates} label="월드컵 후보" placeholder="후보 입력" max={16} />
+        <div className="bracket-ready">
+          <span>예정 대진</span>
+          <strong>{bracketSize ? `${bracketSize}강 · 총 ${bracketSize - 1}번 선택` : "후보를 4명 이상 입력해 주세요"}</strong>
+        </div>
+        <button className="button-primary button-full" onClick={start} disabled={!bracketSize}>대진표 섞고 시작 <span>🏆</span></button>
+      </div>
+    );
+  }
+  if (status === "seeding") {
+    return (
+      <div className="engine-panel suspense-stage" aria-live="polite">
+        <div className="bracket-shuffle" aria-hidden><i>16</i><i>8</i><i>4</i><b>🏆</b></div>
+        <small>대진 추첨 중</small>
+        <h3>첫 상대를 정하고 있어요</h3>
+        <p>강자는 결승에서 만날 수도, 지금 만날 수도 있습니다.</p>
+        <div className="suspense-dots"><i /><i /><i /></div>
+      </div>
+    );
+  }
+  if (status === "done" && winner) {
+    return (
+      <div className="engine-panel quiz-result worldcup-result">
         <div className="trophy">🏆</div><span>최종 우승</span><h3>{winner}</h3>
-        <strong>마음은 이미 알고 있었어요.</strong>
+        <strong>{runnerUp ? `${runnerUp}을(를) 꺾고 우승했어요.` : "마음은 이미 알고 있었어요."}</strong>
+        <p>{bracketTotal}번의 선택 끝에 남은 단 하나. 이 결과를 친구에게 보내 같은 우승자가 나오는지 확인해 보세요.</p>
         <ResultActions text={`${game.title} 우승: ${winner}`} onReset={reset} />
       </div>
     );
   }
   const roundName = round.length === 2 ? "결승" : `${round.length}강`;
+  const totalPercent = bracketTotal ? Math.round((completed / bracketTotal) * 100) : 0;
   return (
     <div className="engine-panel">
-      <div className="game-status"><span>{roundName} · MATCH {match / 2 + 1}</span><b>더 끌리는 하나를 선택</b></div>
+      <div className="progress-label"><span>{roundName} · MATCH {match / 2 + 1} / {round.length / 2}</span><b>전체 {totalPercent}%</b></div>
+      <div className="progress-track worldcup-progress"><span style={{ width: `${totalPercent}%` }} /></div>
+      <div className="game-status"><span>생존 {round.length}개</span><b>더 끌리는 하나를 선택</b></div>
       <div className="worldcup-stage">
         <button className={selected === round[match] ? "selected" : ""} disabled={selected !== null} onClick={() => pick(round[match])}><small>A</small><strong>{round[match]}</strong><span>{selected === round[match] ? "다음 라운드로!" : "선택하기"}</span></button>
         <i>VS</i>
@@ -449,7 +607,7 @@ function SplitGame({ game }: { game: Game }) {
   return (
     <div className="engine-panel split-layout">
       <div className="split-fields">
-        <label><span>총 결제금액</span><div><input type="number" inputMode="numeric" min="0" value={amount} onChange={(event) => setAmount(Math.max(0, Number(event.target.value)))} /><b>원</b></div></label>
+        <label><span>총 결제금액</span><div><input type="number" inputMode="numeric" min="0" max="999999999" value={amount} onChange={(event) => setAmount(Math.min(999999999, Math.max(0, Number(event.target.value))))} /><b>원</b></div></label>
         <label><span>함께한 인원</span><div className="stepper"><button aria-label="인원 줄이기" onClick={() => { tapFeedback(); setPeople(Math.max(2, people - 1)); }}>−</button><strong>{people}명</strong><button aria-label="인원 늘리기" onClick={() => { tapFeedback(); setPeople(Math.min(30, people + 1)); }}>＋</button></div></label>
       </div>
       <div className="split-result">

@@ -6,6 +6,7 @@ import { PageShell } from "@/components/site-shell";
 export const metadata: Metadata = {
   title: "모든 게임",
   description: "결정 룰렛, 여행 도구, 밸런스게임, 성향 테스트와 월드컵을 한곳에서 만나보세요.",
+  alternates: { canonical: "/games" },
 };
 
 export default function GamesPage() {
@@ -24,4 +25,3 @@ export default function GamesPage() {
     </PageShell>
   );
 }
-

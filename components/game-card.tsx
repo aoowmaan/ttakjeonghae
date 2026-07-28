@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Game } from "@/data/games";
+import { AdUnit } from "./ad-unit";
 
 export function GameCard({ game, size = "regular" }: { game: Game; size?: "regular" | "large" }) {
   return (
@@ -26,11 +27,10 @@ export function GameCard({ game, size = "regular" }: { game: Game; size?: "regul
 }
 
 export function AdSpace({ variant = "wide" }: { variant?: "wide" | "box" }) {
-  if (!process.env.NEXT_PUBLIC_ADSENSE_CLIENT) return null;
-  return (
-    <aside className={`ad-space ad-space-${variant}`} aria-label="광고 영역">
-      <span>ADVERTISEMENT</span>
-      <p>콘텐츠와 안전하게 분리된 광고 영역</p>
-    </aside>
-  );
+  const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
+  const slot = variant === "box"
+    ? process.env.NEXT_PUBLIC_ADSENSE_SLOT_BOX
+    : process.env.NEXT_PUBLIC_ADSENSE_SLOT_WIDE;
+  if (!client || !slot) return null;
+  return <AdUnit client={client} slot={slot} variant={variant} />;
 }
