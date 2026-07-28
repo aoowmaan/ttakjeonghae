@@ -84,34 +84,78 @@ function ResultActions({ text, onReset }: { text: string; onReset: () => void })
 
 function CardsGame({ game }: { game: Game }) {
   const [names, setNames] = useState(starterNames);
+  const [roles, setRoles] = useState(game.options ?? []);
   const [started, setStarted] = useState(false);
+  const [phase, setPhase] = useState<"setup" | "shuffling" | "ready">("setup");
   const [winner, setWinner] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [flipped, setFlipped] = useState<number[]>([]);
+  const [choosing, setChoosing] = useState<number | null>(null);
   const cards = useMemo(() => (started ? shuffle(names) : names), [started, names]);
   const assignmentMode = (game.options?.length ?? 0) > 1;
+  const isRoomPicker = game.slug === "room-picker";
+  const canStart = names.length >= 2 && (!assignmentMode || roles.length >= names.length);
 
   const start = () => {
-    if (names.length < 2) return;
+    if (!canStart) return;
     tapFeedback(18);
     const shuffledNames = shuffle(names);
     if (assignmentMode) {
-      const roles = game.options ?? [];
-      setAssignments(Object.fromEntries(shuffledNames.map((name, index) => [name, roles[index % roles.length]])));
+      const shuffledRoles = shuffle(roles);
+      setAssignments(Object.fromEntries(shuffledNames.map((name, index) => [name, shuffledRoles[index % shuffledRoles.length]])));
       setWinner(null);
     } else {
       setAssignments({});
       setWinner(shuffledNames[0]);
     }
     setFlipped([]);
+    setChoosing(null);
     setStarted(true);
+    setPhase("shuffling");
+    window.setTimeout(() => setPhase("ready"), 1650);
+  };
+  const revealCard = (index: number) => {
+    if (choosing !== null || flipped.includes(index)) return;
+    tapFeedback(18);
+    setChoosing(index);
+    window.setTimeout(() => {
+      setFlipped((current) => [...current, index]);
+      setChoosing(null);
+    }, 520);
   };
   if (!started) {
     return (
       <div className="engine-panel">
         <NameEditor values={names} onChange={setNames} />
-        <button className="button-primary button-full" onClick={start} disabled={names.length < 2}>카드 섞기 <span>→</span></button>
-        <p className="microcopy">이름은 이 기기에 저장되지 않아요.</p>
+        {assignmentMode && (
+          <div className="role-editor">
+            <NameEditor
+              values={roles}
+              onChange={setRoles}
+              label={isRoomPicker ? "방 / 침대 이름" : "배정할 역할"}
+              placeholder={isRoomPicker ? "예: 테라스방" : "역할 입력"}
+            />
+          </div>
+        )}
+        <button className="button-primary button-full" onClick={start} disabled={!canStart}>운명의 카드 섞기 <span>→</span></button>
+        <p className="microcopy">
+          {assignmentMode && roles.length < names.length
+            ? `참가자 수에 맞게 ${names.length - roles.length}개의 ${isRoomPicker ? "방 또는 자리" : "역할"}을 더 입력해 주세요.`
+            : "이름과 입력 내용은 이 기기에 저장되지 않아요."}
+        </p>
+      </div>
+    );
+  }
+  if (phase === "shuffling") {
+    return (
+      <div className="engine-panel suspense-stage" aria-live="polite">
+        <div className="shuffle-stack" aria-hidden>
+          <span /><span /><span />
+        </div>
+        <small>운명 배분 중</small>
+        <h3>카드를 제대로 섞고 있어요</h3>
+        <p>지금 바꾸자고 해도 이미 늦었습니다.</p>
+        <div className="suspense-dots"><i /><i /><i /></div>
       </div>
     );
   }
@@ -125,11 +169,11 @@ function CardsGame({ game }: { game: Game }) {
           const cardResult = assignmentMode ? assignments[name] : isWinner ? game.options?.[0] ?? "당첨!" : "통과";
           return (
             <button
-              className={`pick-card ${isFlipped ? "flipped" : ""} ${isFlipped && isWinner ? "winner" : ""}`}
+              className={`pick-card ${isFlipped ? "flipped" : ""} ${choosing === index ? "choosing" : ""} ${isFlipped && isWinner ? "winner" : ""}`}
               key={`${name}-${index}`}
-              onClick={() => { tapFeedback(18); setFlipped((current) => current.includes(index) ? current : [...current, index]); }}
-              disabled={isFlipped}
-              aria-label={`${index + 1}번 카드`}
+              onClick={() => revealCard(index)}
+              disabled={isFlipped || choosing !== null}
+              aria-label={`${index + 1}번 카드${choosing === index ? " 여는 중" : ""}`}
             >
               <span className="card-face card-back" aria-hidden={isFlipped}><i>딱!</i><small>{index + 1}</small></span>
               <span className="card-face card-front" aria-hidden={!isFlipped}><strong>{cardResult}</strong><b>{name}</b><em>{assignmentMode || isWinner ? "🎉" : "휴—"}</em></span>
@@ -173,7 +217,7 @@ function WheelGame({ game }: { game: Game }) {
     setRotation(next);
     setSpinning(true);
     setResult(null);
-    window.setTimeout(() => { setSpinning(false); setResult(options[index]); }, 2200);
+    window.setTimeout(() => { setSpinning(false); setResult(options[index]); tapFeedback(28); }, 3200);
   };
   const colors = ["#ff5c46", "#ffbf3f", "#8d66ff", "#20a47a", "#2c6ed5", "#ef72a7"];
   const gradient = options.map((_, index) => `${colors[index % colors.length]} ${index * 100 / options.length}% ${(index + 1) * 100 / options.length}%`).join(", ");
@@ -183,7 +227,7 @@ function WheelGame({ game }: { game: Game }) {
         <NameEditor values={options} onChange={setOptions} label="후보" placeholder="후보 입력" />
         <button className="button-primary button-full" onClick={spin} disabled={options.length < 2 || spinning}>{spinning ? "돌아가는 중…" : "룰렛 돌리기"} <span>↻</span></button>
       </div>
-      <div className="wheel-stage">
+      <div className={`wheel-stage ${spinning ? "is-spinning" : ""}`}>
         <div className="wheel-pointer">▼</div>
         <button
           className="wheel"
@@ -193,6 +237,7 @@ function WheelGame({ game }: { game: Game }) {
         >
           <span>딱!</span>
         </button>
+        {spinning && <div className="wheel-suspense" aria-live="polite">운명이 고르는 중…</div>}
         <div className="wheel-labels" aria-hidden>
           {options.slice(0, 6).map((option) => <span key={option}>{option}</span>)}
         </div>
@@ -272,11 +317,16 @@ function BalanceGame({ game }: { game: Game }) {
   const prompts = game.prompts ?? [];
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState<number[]>([]);
+  const [selected, setSelected] = useState<number | null>(null);
   const choose = (value: number) => {
+    if (selected !== null) return;
     tapFeedback();
-    const next = [...choices, value];
-    setChoices(next);
-    window.setTimeout(() => setIndex(index + 1), 180);
+    setSelected(value);
+    window.setTimeout(() => {
+      setChoices((current) => [...current, value]);
+      setIndex((current) => current + 1);
+      setSelected(null);
+    }, 620);
   };
   if (index >= prompts.length) {
     const left = choices.filter((choice) => choice === 0).length;
@@ -286,7 +336,7 @@ function BalanceGame({ game }: { game: Game }) {
         <p className="result-kicker">당신의 선택이 완성됐어요</p>
         <h3>{left === choices.length - left ? "완벽한 균형 감각의 소유자" : left > choices.length / 2 ? "왼쪽 선택에 마음이 더 움직였어요" : "오른쪽 선택에 마음이 더 움직였어요"}</h3>
         <p>친구에게 같은 게임을 보내고 몇 개나 같은지 비교해 보세요.</p>
-        <ResultActions text={`${game.title}: ${left} 대 ${choices.length - left}`} onReset={() => { setIndex(0); setChoices([]); }} />
+        <ResultActions text={`${game.title}: ${left} 대 ${choices.length - left}`} onReset={() => { setIndex(0); setChoices([]); setSelected(null); }} />
       </div>
     );
   }
@@ -296,9 +346,9 @@ function BalanceGame({ game }: { game: Game }) {
       <div className="progress-label"><span>{index + 1} / {prompts.length}</span><b>{Math.round((index / prompts.length) * 100)}%</b></div>
       <div className="progress-track"><span style={{ width: `${(index / prompts.length) * 100}%` }} /></div>
       <div className="balance-stage">
-        <button onClick={() => choose(0)}><small>A</small><strong>{prompt.a}</strong><span>이쪽 선택</span></button>
+        <button className={selected === 0 ? "selected" : ""} disabled={selected !== null} onClick={() => choose(0)}><small>A</small><strong>{prompt.a}</strong><span>{selected === 0 ? "진짜 이걸 골랐네요!" : "이쪽 선택"}</span></button>
         <i>VS</i>
-        <button onClick={() => choose(1)}><small>B</small><strong>{prompt.b}</strong><span>이쪽 선택</span></button>
+        <button className={selected === 1 ? "selected" : ""} disabled={selected !== null} onClick={() => choose(1)}><small>B</small><strong>{prompt.b}</strong><span>{selected === 1 ? "취향 접수 완료!" : "이쪽 선택"}</span></button>
       </div>
     </div>
   );
@@ -353,15 +403,21 @@ function WorldCupGame({ game }: { game: Game }) {
   const [nextRound, setNextRound] = useState<string[]>([]);
   const [match, setMatch] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const pick = (choice: string) => {
+    if (selected) return;
     tapFeedback();
-    const next = [...nextRound, choice];
-    if (match + 2 >= round.length) {
-      if (next.length === 1) setWinner(choice);
-      else { setRound(next); setNextRound([]); setMatch(0); }
-    } else setMatch(match + 2);
+    setSelected(choice);
+    window.setTimeout(() => {
+      const next = [...nextRound, choice];
+      if (match + 2 >= round.length) {
+        if (next.length === 1) setWinner(choice);
+        else { setRound(next); setNextRound([]); setMatch(0); }
+      } else setMatch(match + 2);
+      setSelected(null);
+    }, 560);
   };
-  const reset = () => { setRound(initial); setNextRound([]); setMatch(0); setWinner(null); };
+  const reset = () => { setRound(initial); setNextRound([]); setMatch(0); setWinner(null); setSelected(null); };
   if (winner) {
     return (
       <div className="engine-panel quiz-result">
@@ -376,9 +432,9 @@ function WorldCupGame({ game }: { game: Game }) {
     <div className="engine-panel">
       <div className="game-status"><span>{roundName} · MATCH {match / 2 + 1}</span><b>더 끌리는 하나를 선택</b></div>
       <div className="worldcup-stage">
-        <button onClick={() => pick(round[match])}><small>A</small><strong>{round[match]}</strong><span>선택하기</span></button>
+        <button className={selected === round[match] ? "selected" : ""} disabled={selected !== null} onClick={() => pick(round[match])}><small>A</small><strong>{round[match]}</strong><span>{selected === round[match] ? "다음 라운드로!" : "선택하기"}</span></button>
         <i>VS</i>
-        <button onClick={() => pick(round[match + 1])}><small>B</small><strong>{round[match + 1]}</strong><span>선택하기</span></button>
+        <button className={selected === round[match + 1] ? "selected" : ""} disabled={selected !== null} onClick={() => pick(round[match + 1])}><small>B</small><strong>{round[match + 1]}</strong><span>{selected === round[match + 1] ? "살아남았습니다!" : "선택하기"}</span></button>
       </div>
     </div>
   );

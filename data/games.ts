@@ -67,6 +67,107 @@ const friendBalance: BalancePrompt[] = [
   { a: "10년 전으로 친구와 돌아가기", b: "10년 뒤 친구와 미리 만나기" },
 ];
 
+const chaosBalance: BalancePrompt[] = [
+  { a: "평생 재채기할 때마다 ‘사랑해!’ 외치기", b: "하품할 때마다 혼자 박수 세 번 치기" },
+  { a: "내 검색 기록을 친구 단톡방에 공개", b: "내 갤러리 최근 사진 30장을 가족에게 공개" },
+  { a: "소개팅에서 전 애인 이름 부르기", b: "소개팅에서 상대 부모님 성함 먼저 묻기" },
+  { a: "모든 사진에서 나만 브이 금지", b: "모든 사진에서 나만 정면 응시" },
+  { a: "카톡 오타를 평생 수정 못 하기", b: "음성 메시지만 보낼 수 있기" },
+  { a: "회사 회식에서 내 노래방 영상 상영", b: "친구 결혼식에서 내 흑역사 사진 상영" },
+  { a: "웃을 때마다 효과음 ‘뿌우’ 나기", b: "걸을 때마다 슬리퍼 소리 나기" },
+  { a: "평생 라면 스프 먼저 넣는 사람과 살기", b: "평생 탕수육 소스 취향 반대인 사람과 살기" },
+  { a: "중요한 순간마다 딸꾹질 10번", b: "조용한 순간마다 배에서 천둥소리" },
+  { a: "친구가 내 옷 대신 골라주기", b: "부모님이 내 프로필 사진 골라주기" },
+];
+
+const spicyRelationshipBalance: BalancePrompt[] = [
+  { a: "내 스토리 올리자마자 1초 만에 보는 썸", b: "항상 23시간 뒤에 보는 썸" },
+  { a: "애정 표현 100점, 연락 텀 6시간", b: "연락은 칼답, 애정 표현은 0점" },
+  { a: "회사에서 애칭으로 불리기", b: "부모님 앞에서 연애 편지 낭독하기" },
+  { a: "연인의 전 애인 사진을 우연히 발견", b: "연인이 내 흑역사 계정을 우연히 발견" },
+  { a: "첫 데이트 내내 이에 고춧가루", b: "첫 데이트 끝날 때 바지 지퍼 발견" },
+  { a: "모든 싸움을 친구들이 알기", b: "모든 화해 과정을 부모님이 알기" },
+  { a: "공개 연애로 매일 커플 사진", b: "비밀 연애로 남들 앞에서 존댓말" },
+  { a: "질투는 많지만 바로 말하는 연인", b: "쿨한 척하다가 일기장에 다 쓰는 연인" },
+  { a: "데이트 계획표를 분 단위로 짜기", b: "만나서 정하자만 반복하기" },
+  { a: "내 친구들과 너무 친한 연인", b: "내 친구 이름을 매번 헷갈리는 연인" },
+];
+
+const chaosQuiz: QuizQuestion[] = [
+  {
+    question: "단톡방이 갑자기 3시간째 조용하다. 당신은?",
+    answers: [
+      { label: "웃긴 짤을 투척하고 반응을 기다린다", scores: { overheat: 2 } },
+      { label: "조용히 읽고 아무 일도 없었던 척한다", scores: { ghost: 2 } },
+      { label: "이번 주 약속 일정을 정리해 올린다", scores: { director: 2 } },
+      { label: "‘뭐 먹지?’ 한마디로 모두를 깨운다", scores: { snack: 2 } },
+    ],
+  },
+  {
+    question: "여행 숙소에 도착했는데 예약이 잘못됐다.",
+    answers: [
+      { label: "일단 웃긴 상황이라며 영상부터 찍는다", scores: { overheat: 2 } },
+      { label: "조용히 로비 구석으로 사라진다", scores: { ghost: 2 } },
+      { label: "예약 내역과 대안을 동시에 펼친다", scores: { director: 2 } },
+      { label: "근처 편의점 위치부터 찾는다", scores: { snack: 2 } },
+    ],
+  },
+  {
+    question: "친구가 소개팅 후기를 묻는다.",
+    answers: [
+      { label: "표정과 성대모사까지 1인 4역으로 재연", scores: { overheat: 2 } },
+      { label: "‘그냥 그랬어’ 하고 화제를 돌린다", scores: { ghost: 2 } },
+      { label: "장점·단점·재만남 가능성을 표로 정리", scores: { director: 2 } },
+      { label: "뭐 먹었는지부터 자세히 설명한다", scores: { snack: 2 } },
+    ],
+  },
+  {
+    question: "모임에서 갑자기 어색한 침묵이 찾아왔다.",
+    answers: [
+      { label: "내 흑역사를 자진 공개해 분위기를 살린다", scores: { overheat: 2 } },
+      { label: "휴대폰을 보며 투명 인간 모드에 들어간다", scores: { ghost: 2 } },
+      { label: "다음 코스를 자연스럽게 제안한다", scores: { director: 2 } },
+      { label: "디저트 시킬 사람을 모집한다", scores: { snack: 2 } },
+    ],
+  },
+  {
+    question: "약속 시간 10분 전, 당신의 모습은?",
+    answers: [
+      { label: "이미 도착해서 친구 놀릴 멘트 준비 중", scores: { overheat: 2 } },
+      { label: "도착했지만 아무에게도 말하지 않고 대기", scores: { ghost: 2 } },
+      { label: "도착 시간과 좌석 위치를 단톡에 공지", scores: { director: 2 } },
+      { label: "근처 붕어빵 냄새를 따라 이동 중", scores: { snack: 2 } },
+    ],
+  },
+];
+
+const chaosResults: Record<string, QuizResult> = {
+  overheat: {
+    title: "인간 예능 자막",
+    emoji: "📺",
+    summary: "당신이 입을 열면 단톡방이 다시 살아납니다.",
+    detail: "어색함을 못 견뎌 본인의 흑역사까지 콘텐츠로 바꾸는 타입입니다. 친구들은 웃지만 가끔 당신의 다음 발언을 두려워합니다.",
+  },
+  ghost: {
+    title: "선택적 투명 인간",
+    emoji: "👻",
+    summary: "분명 있었는데 목격자가 없습니다.",
+    detail: "필요한 순간에는 정확히 나타나고, 귀찮은 기운이 감지되면 조용히 사라집니다. 읽씹이 아니라 에너지 절약 모드라고 주장합니다.",
+  },
+  director: {
+    title: "모임 총괄 프로듀서",
+    emoji: "🎬",
+    summary: "당신이 없으면 예약도, 이동도, 엔딩도 없습니다.",
+    detail: "친구들이 아무 생각 없이 웃을 수 있는 이유는 당신이 뒤에서 모든 것을 정리하기 때문입니다. 단, 본인만의 휴식 시간도 일정에 넣어주세요.",
+  },
+  snack: {
+    title: "간식 기반 평화주의자",
+    emoji: "🍪",
+    summary: "대부분의 갈등은 맛있는 것으로 해결된다고 믿습니다.",
+    detail: "복잡한 상황에서도 먹을 것을 찾아내는 생존형 분위기 메이커입니다. 가방 안에서 과자가 나오는 순간 모두가 당신을 믿게 됩니다.",
+  },
+};
+
 const travelQuiz: QuizQuestion[] = [
   {
     question: "여행지가 정해지면 가장 먼저 하는 일은?",
@@ -239,6 +340,15 @@ export const games: Game[] = [
   },
   {
     slug: "friend-balance", title: "찐친 난감 밸런스게임", shortTitle: "찐친 밸런스", eyebrow: "8라운드", description: "우정이 깊을수록 더 어려운 선택. 우리 얼마나 잘 맞을까?", category: "친구", engine: "balance", emoji: "🫠", accent: "#e2589a", plays: "이번 주 4.6K", tags: ["친구", "밸런스게임", "파티"], instructions: baseInstructions.balance, prompts: friendBalance, longDescription: "친한 사이일수록 웃기고 난감한 상황을 담은 밸런스게임입니다. 같은 화면을 돌려 보며 서로 다른 선택의 이유를 이야기해 보세요.",
+  },
+  {
+    slug: "chaos-balance", title: "대환장 흑역사 밸런스게임", shortTitle: "대환장 밸런스", eyebrow: "10라운드 · 웃음 주의", description: "검색 기록 공개부터 재채기 사랑 고백까지. 둘 다 싫어도 하나는 골라야 해요.", category: "친구", engine: "balance", emoji: "🤡", accent: "#ff713d", plays: "신규", fresh: true, tags: ["유머", "밸런스게임", "흑역사"], instructions: baseInstructions.balance, prompts: chaosBalance, longDescription: "현실에서 일어나면 곤란하지만 상상만 하면 웃긴 상황을 모았습니다. 친구들과 선택 이유를 말하는 순간부터 진짜 게임이 시작됩니다.",
+  },
+  {
+    slug: "spicy-relationship-balance", title: "어른의 연애 흑역사 밸런스", shortTitle: "연애 매운맛", eyebrow: "매운맛 · 수위 2/5", description: "썸, 질투, 공개 연애와 흑역사. 노골적이지 않아도 충분히 얼굴이 뜨거워져요.", category: "친구", engine: "balance", emoji: "🌶️", accent: "#d83c54", plays: "신규", fresh: true, tags: ["연애", "매운맛", "밸런스게임"], instructions: baseInstructions.balance, prompts: spicyRelationshipBalance, longDescription: "성인 친구와 커플이 가볍게 즐길 수 있는 연애 상황형 밸런스게임입니다. 노골적인 성적 내용 없이 썸, 질투, 흑역사처럼 대화가 달아오르는 소재만 담았습니다.",
+  },
+  {
+    slug: "social-chaos-type", title: "내 안의 모임 빌런 테스트", shortTitle: "모임 빌런", eyebrow: "5문항 · 과몰입 금지", description: "인간 예능 자막인가, 선택적 투명 인간인가. 친구들이 보는 내 본캐를 찾아요.", category: "테스트", engine: "quiz", emoji: "🦹", accent: "#7047d7", plays: "신규", fresh: true, tags: ["유머", "심리테스트", "친구"], instructions: baseInstructions.quiz, questions: chaosQuiz, results: chaosResults, longDescription: "모임과 단톡방에서 무심코 드러나는 행동을 과장된 캐릭터로 풀어낸 유머 테스트입니다. 전문적인 심리 진단이 아니며 결과를 친구들과 비교할 때 가장 재미있습니다.",
   },
   {
     slug: "food-worldcup", title: "오늘 뭐 먹지 월드컵", shortTitle: "메뉴 월드컵", eyebrow: "16강", description: "떡볶이부터 초밥까지. 오늘 내 마음이 원하는 단 하나의 메뉴.", category: "월드컵", engine: "worldcup", emoji: "🍽️", accent: "#f4512c", plays: "이번 주 4.4K", tags: ["월드컵", "메뉴", "음식"], instructions: baseInstructions.worldcup, options: ["🍲 김치찌개", "🍣 초밥", "🍕 피자", "🍜 쌀국수", "🌮 타코", "🍗 치킨", "🍝 파스타", "🥘 마라탕", "🥩 고기구이", "🍛 카레", "🥟 만두", "🍔 버거", "🍱 돈가스", "🌯 샌드위치", "🍚 비빔밥", "🥞 떡볶이"], longDescription: "오늘 먹고 싶은 메뉴를 토너먼트 방식으로 좁혀주는 텍스트 월드컵입니다. 이미지 저작권 걱정 없이 음식 이름과 이모지만으로 빠르고 가볍게 진행합니다.",
