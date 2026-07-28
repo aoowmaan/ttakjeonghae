@@ -351,6 +351,9 @@ export const games: Game[] = [
     slug: "social-chaos-type", title: "내 안의 모임 빌런 테스트", shortTitle: "모임 빌런", eyebrow: "5문항 · 과몰입 금지", description: "인간 예능 자막인가, 선택적 투명 인간인가. 친구들이 보는 내 본캐를 찾아요.", category: "테스트", engine: "quiz", emoji: "🦹", accent: "#7047d7", plays: "신규", fresh: true, tags: ["유머", "심리테스트", "친구"], instructions: baseInstructions.quiz, questions: chaosQuiz, results: chaosResults, longDescription: "모임과 단톡방에서 무심코 드러나는 행동을 과장된 캐릭터로 풀어낸 유머 테스트입니다. 전문적인 심리 진단이 아니며 결과를 친구들과 비교할 때 가장 재미있습니다.",
   },
   {
+    slug: "custom-worldcup", title: "나만의 월드컵 만들기", shortTitle: "월드컵 메이커", eyebrow: "직접 제작 · 링크 공유", description: "제목과 후보만 넣으면 4강부터 32강까지 나만의 토너먼트가 완성돼요.", category: "월드컵", engine: "worldcup", emoji: "🛠️", accent: "#7c5cff", plays: "직접 만들기", featured: true, fresh: true, tags: ["월드컵", "만들기", "공유"], instructions: ["월드컵 제목과 후보를 한 줄에 하나씩 입력하세요.", "4강·8강·16강·32강 중 원하는 대진을 선택하세요.", "링크를 공유하거나 바로 플레이해 최종 우승자를 확인하세요."], options: ["🍗 치킨", "🍕 피자", "🍣 초밥", "🌮 타코", "🍜 라멘", "🥘 마라탕", "🍔 버거", "🍝 파스타"], longDescription: "친구들만 아는 별명, 최애 메뉴, 여행지, 캐릭터처럼 어떤 주제든 직접 토너먼트로 만들 수 있습니다. 작성 중인 후보는 현재 기기에 자동으로 보관되고, 공유 링크를 받은 사람은 같은 후보로 즉시 플레이할 수 있습니다.",
+  },
+  {
     slug: "food-worldcup", title: "오늘 뭐 먹지 월드컵", shortTitle: "메뉴 월드컵", eyebrow: "16강", description: "떡볶이부터 초밥까지. 오늘 내 마음이 원하는 단 하나의 메뉴.", category: "월드컵", engine: "worldcup", emoji: "🍽️", accent: "#f4512c", plays: "이번 주 4.4K", tags: ["월드컵", "메뉴", "음식"], instructions: baseInstructions.worldcup, options: ["🍲 김치찌개", "🍣 초밥", "🍕 피자", "🍜 쌀국수", "🌮 타코", "🍗 치킨", "🍝 파스타", "🥘 마라탕", "🥩 고기구이", "🍛 카레", "🥟 만두", "🍔 버거", "🍱 돈가스", "🌯 샌드위치", "🍚 비빔밥", "🥞 떡볶이"], longDescription: "오늘 먹고 싶은 메뉴를 토너먼트 방식으로 좁혀주는 텍스트 월드컵입니다. 이미지 저작권 걱정 없이 음식 이름과 이모지만으로 빠르고 가볍게 진행합니다.",
   },
   {

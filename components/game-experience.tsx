@@ -487,6 +487,8 @@ function QuizGame({ game }: { game: Game }) {
 
 function WorldCupGame({ game }: { game: Game }) {
   const initial = game.options ?? [];
+  const isMaker = game.slug === "custom-worldcup";
+  const [cupTitle, setCupTitle] = useState(isMaker ? "우리끼리 최애 월드컵" : game.title);
   const [candidates, setCandidates] = useState(initial);
   const [status, setStatus] = useState<"setup" | "seeding" | "playing" | "done">("setup");
   const [round, setRound] = useState<string[]>([]);
@@ -497,7 +499,53 @@ function WorldCupGame({ game }: { game: Game }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [completed, setCompleted] = useState(0);
   const [bracketTotal, setBracketTotal] = useState(0);
-  const bracketSize = candidates.length >= 16 ? 16 : candidates.length >= 8 ? 8 : candidates.length >= 4 ? 4 : 0;
+  const [requestedBracketSize, setRequestedBracketSize] = useState(0);
+  const [roundTrail, setRoundTrail] = useState<string[]>([]);
+  const [copiedSetup, setCopiedSetup] = useState(false);
+  const possibleSizes = [4, 8, 16, 32].filter((size) => size <= candidates.length);
+  const suggestedSize = possibleSizes.at(-1) ?? 0;
+  const bracketSize = possibleSizes.includes(requestedBracketSize) ? requestedBracketSize : suggestedSize;
+
+  useEffect(() => {
+    if (!isMaker) return;
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      const sharedItems = params.get("items");
+      const sharedTitle = params.get("title");
+      if (sharedTitle) setCupTitle(sharedTitle.slice(0, 40));
+      if (sharedItems) {
+        try {
+          const parsed = JSON.parse(sharedItems);
+          if (Array.isArray(parsed)) {
+            const safeItems = parsed
+              .filter((item): item is string => typeof item === "string")
+              .map((item) => item.trim().slice(0, 40))
+              .filter(Boolean)
+              .filter((item, index, items) => items.indexOf(item) === index)
+              .slice(0, 32);
+            if (safeItems.length >= 4) setCandidates(safeItems);
+          }
+        } catch {
+          // 잘못된 공유 링크는 기본 후보로 안전하게 시작합니다.
+        }
+      } else {
+        try {
+          const saved = JSON.parse(localStorage.getItem("ttak-worldcup-draft") ?? "null");
+          if (saved?.title) setCupTitle(String(saved.title).slice(0, 40));
+          if (Array.isArray(saved?.items) && saved.items.length >= 4) setCandidates(saved.items.slice(0, 32));
+        } catch {
+          // 로컬 초안이 손상된 경우 기본값을 사용합니다.
+        }
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [isMaker]);
+
+  useEffect(() => {
+    if (!isMaker || candidates.length < 4) return;
+    localStorage.setItem("ttak-worldcup-draft", JSON.stringify({ title: cupTitle, items: candidates }));
+  }, [candidates, cupTitle, isMaker]);
+
   const start = () => {
     if (!bracketSize) return;
     tapFeedback(20);
@@ -507,6 +555,7 @@ function WorldCupGame({ game }: { game: Game }) {
     setCompleted(0);
     setSelected(null);
     setNextRound([]);
+    setRoundTrail([]);
     setMatch(0);
     const seeded = shuffle(candidates).slice(0, bracketSize);
     setBracketTotal(seeded.length - 1);
@@ -521,16 +570,24 @@ function WorldCupGame({ game }: { game: Game }) {
     setSelected(choice);
     window.setTimeout(() => {
       const next = [...nextRound, choice];
+      const isLastMatch = match + 2 >= round.length;
       setCompleted((current) => current + 1);
-      if (match + 2 >= round.length) {
+      if (isLastMatch) {
         if (next.length === 1) {
           setRunnerUp(round.find((item) => item !== choice) ?? null);
           setWinner(choice);
           setStatus("done");
           tapFeedback(35);
+        } else {
+          setRoundTrail((current) => [...current, `${round.length}강 · ${next.length}명 진출`]);
+          setRound(next);
+          setNextRound([]);
+          setMatch(0);
         }
-        else { setRound(next); setNextRound([]); setMatch(0); }
-      } else setMatch(match + 2);
+      } else {
+        setNextRound(next);
+        setMatch((current) => current + 2);
+      }
       setSelected(null);
     }, 560);
   };
@@ -543,21 +600,91 @@ function WorldCupGame({ game }: { game: Game }) {
     setRunnerUp(null);
     setSelected(null);
     setCompleted(0);
+    setRoundTrail([]);
+  };
+  const updateCustomCandidates = (value: string) => {
+    const items = value
+      .split(/\r?\n/)
+      .map((item) => item.trim().slice(0, 40))
+      .filter(Boolean)
+      .filter((item, index, values) => values.indexOf(item) === index)
+      .slice(0, 32);
+    setCandidates(items);
+  };
+  const shareSetup = async () => {
+    if (candidates.length < 4) return;
+    tapFeedback();
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.searchParams.set("title", cupTitle.trim() || "나만의 월드컵");
+    url.searchParams.set("items", JSON.stringify(candidates));
+    const shareData = {
+      title: `${cupTitle.trim() || "나만의 월드컵"} | 딱정해`,
+      text: "내가 만든 월드컵, 너도 우승자를 골라봐!",
+      url: url.toString(),
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+    await navigator.clipboard.writeText(url.toString());
+    setCopiedSetup(true);
+    window.setTimeout(() => setCopiedSetup(false), 1600);
   };
   if (status === "setup") {
     return (
       <div className="engine-panel worldcup-setup">
         <div className="worldcup-intro">
-          <span>{candidates.length}명의 후보</span>
-          <h3>내 마음의 토너먼트를 시작합니다</h3>
-          <p>후보를 직접 바꿀 수 있어요. 4강·8강·16강 중 가능한 가장 큰 대진으로 무작위 편성됩니다.</p>
+          <span>{isMaker ? "MAKE YOUR OWN" : `${candidates.length}명의 후보`}</span>
+          <h3>{isMaker ? "세상에 없던 월드컵을 만드세요" : "내 마음의 토너먼트를 시작합니다"}</h3>
+          <p>{isMaker ? "한 줄에 후보 하나씩. 제목과 후보를 정하면 링크로 친구를 초대할 수 있어요." : "후보를 직접 바꾸고 원하는 대진 수를 골라 진짜 토너먼트로 진행하세요."}</p>
         </div>
-        <NameEditor values={candidates} onChange={setCandidates} label="월드컵 후보" placeholder="후보 입력" max={16} />
+        {isMaker ? (
+          <div className="worldcup-maker-fields">
+            <label>
+              <span>월드컵 제목</span>
+              <input value={cupTitle} maxLength={40} onChange={(event) => setCupTitle(event.target.value)} placeholder="예: 우리끼리 야식 최강자전" />
+            </label>
+            <label>
+              <span>후보 목록 <b>{candidates.length}/32</b></span>
+              <textarea
+                value={candidates.join("\n")}
+                onChange={(event) => updateCustomCandidates(event.target.value)}
+                placeholder={"후보를 한 줄에 하나씩 입력하세요\n예: 떡볶이\n예: 치킨"}
+                rows={9}
+              />
+            </label>
+          </div>
+        ) : (
+          <NameEditor values={candidates} onChange={setCandidates} label="월드컵 후보" placeholder="후보 입력" max={32} />
+        )}
+        <div className="bracket-size-picker" aria-label="대진 규모 선택">
+          <span>대진 규모</span>
+          <div>
+            {[4, 8, 16, 32].map((size) => (
+              <button
+                key={size}
+                className={bracketSize === size ? "active" : ""}
+                disabled={candidates.length < size}
+                onClick={() => setRequestedBracketSize(size)}
+              >
+                {size}강
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="bracket-ready">
           <span>예정 대진</span>
-          <strong>{bracketSize ? `${bracketSize}강 · 총 ${bracketSize - 1}번 선택` : "후보를 4명 이상 입력해 주세요"}</strong>
+          <strong>{bracketSize ? `${bracketSize}강 → 결승 · 총 ${bracketSize - 1}번 선택` : "후보를 4명 이상 입력해 주세요"}</strong>
         </div>
-        <button className="button-primary button-full" onClick={start} disabled={!bracketSize}>대진표 섞고 시작 <span>🏆</span></button>
+        <div className="worldcup-setup-actions">
+          <button className="button-primary button-full" onClick={start} disabled={!bracketSize}>대진표 섞고 시작 <span>🏆</span></button>
+          {isMaker && <button className="button-ghost" onClick={shareSetup} disabled={candidates.length < 4}>{copiedSetup ? "링크 복사 완료!" : "친구에게 월드컵 공유"}</button>}
+        </div>
       </div>
     );
   }
@@ -575,10 +702,10 @@ function WorldCupGame({ game }: { game: Game }) {
   if (status === "done" && winner) {
     return (
       <div className="engine-panel quiz-result worldcup-result">
-        <div className="trophy">🏆</div><span>최종 우승</span><h3>{winner}</h3>
+        <div className="trophy">🏆</div><span>{cupTitle} · 최종 우승</span><h3>{winner}</h3>
         <strong>{runnerUp ? `${runnerUp}을(를) 꺾고 우승했어요.` : "마음은 이미 알고 있었어요."}</strong>
         <p>{bracketTotal}번의 선택 끝에 남은 단 하나. 이 결과를 친구에게 보내 같은 우승자가 나오는지 확인해 보세요.</p>
-        <ResultActions text={`${game.title} 우승: ${winner}`} onReset={reset} />
+        <ResultActions text={`${cupTitle} 우승: ${winner}`} onReset={reset} />
       </div>
     );
   }
@@ -588,7 +715,12 @@ function WorldCupGame({ game }: { game: Game }) {
     <div className="engine-panel">
       <div className="progress-label"><span>{roundName} · MATCH {match / 2 + 1} / {round.length / 2}</span><b>전체 {totalPercent}%</b></div>
       <div className="progress-track worldcup-progress"><span style={{ width: `${totalPercent}%` }} /></div>
-      <div className="game-status"><span>생존 {round.length}개</span><b>더 끌리는 하나를 선택</b></div>
+      <div className="worldcup-round-trail" aria-label="토너먼트 진행 경로">
+        <span className="complete">START {bracketTotal + 1}강</span>
+        {roundTrail.map((item) => <span className="complete" key={item}>{item}</span>)}
+        <span className="current">{roundName} 진행 중</span>
+      </div>
+      <div className="game-status"><span>이번 라운드 {round.length}개 생존</span><b>{nextRound.length}개 다음 라운드 진출 확정</b></div>
       <div className="worldcup-stage">
         <button className={selected === round[match] ? "selected" : ""} disabled={selected !== null} onClick={() => pick(round[match])}><small>A</small><strong>{round[match]}</strong><span>{selected === round[match] ? "다음 라운드로!" : "선택하기"}</span></button>
         <i>VS</i>

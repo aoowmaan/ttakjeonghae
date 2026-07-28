@@ -15,32 +15,54 @@ export default function Home() {
         <div className="hero-noise" />
         <div className="shell hero-inner">
           <div className="hero-copy">
-            <div className="eyebrow-pill"><span>●</span> 지금 {games.length}개의 결정이 준비됐어요</div>
-            <h1>고민은 짧게,<br /><em>재미는 길게.</em></h1>
-            <p>친구들과 뭘 먹을지, 누가 낼지, 어디로 갈지.<br />애매한 모든 순간을 가볍고 공정하게 정해드려요.</p>
+            <div className="eyebrow-pill"><span>●</span> {games.length}개 게임 · 설치 없이 바로 시작</div>
+            <h1>모였으면,<br /><em>딱 재밌게.</em></h1>
+            <p>월드컵을 만들고, 밸런스를 고르고, 룰렛을 돌려요.<br />설명은 10초면 충분하고 결과는 단톡방까지 이어집니다.</p>
             <div className="hero-actions">
-              <Link className="button-primary" href="/play/who-pays-card">대표 게임 시작 <span>→</span></Link>
-              <Link className="button-text" href="/games">모든 게임 둘러보기 <span>↗</span></Link>
+              <Link className="button-primary" href="/play/custom-worldcup">나만의 월드컵 만들기 <span>＋</span></Link>
+              <Link className="button-text" href="/games">지금 놀 거리 찾기 <span>↗</span></Link>
+            </div>
+            <div className="hero-quick-links">
+              <span>바로 시작</span>
+              <Link href="/play/chaos-balance">🤡 대환장 밸런스</Link>
+              <Link href="/play/social-chaos-type">🦹 모임 빌런 테스트</Link>
+              <Link href="/play/decision-wheel">🎡 결정 룰렛</Link>
             </div>
           </div>
           <div className="hero-deck" aria-label="대표 게임 미리보기">
-            <div className="floating-note note-one">누가 살까?</div>
-            <div className="floating-note note-two">딱 정해!</div>
-            <Link href="/play/who-pays-card" className="hero-card hero-card-back">
-              <span>02</span><b>딱!</b><small>PICK A CARD</small>
+            <div className="floating-note note-one">8강 → 4강 → 결승</div>
+            <div className="floating-note note-two">직접 만들어!</div>
+            <Link href="/play/custom-worldcup" className="hero-card hero-card-back">
+              <span>VS</span><b>최애</b><small>WORLD CUP MAKER</small>
             </Link>
-            <Link href="/play/who-pays-card" className="hero-card hero-card-front">
-              <span className="hero-card-number">01</span>
-              <div>💳</div>
-              <small>오늘의 결제 담당</small>
-              <strong>누가 낼까?</strong>
-              <i>카드를 뒤집어 확인</i>
+            <Link href="/play/custom-worldcup" className="hero-card hero-card-front">
+              <span className="hero-card-number">FINAL</span>
+              <div>🏆</div>
+              <small>나만의 이상형 월드컵</small>
+              <strong>우승은 누구?</strong>
+              <i>후보를 넣고 링크로 공유</i>
             </Link>
-            <div className="hero-stamp">NO MORE<br />눈치게임</div>
+            <div className="hero-stamp">MAKE IT<br />PLAY IT</div>
           </div>
         </div>
         <div className="marquee" aria-hidden>
           <div>룰렛을 돌리고 · 카드를 뒤집고 · 취향을 발견하고 · 여행을 더 재밌게 · 친구와 함께 · 룰렛을 돌리고 · 카드를 뒤집고 · 취향을 발견하고 ·</div>
+        </div>
+      </section>
+
+      <section className="maker-banner shell">
+        <div className="maker-banner-copy">
+          <span>NEW · WORLD CUP STUDIO</span>
+          <h2>우리만 아는 후보로<br />월드컵 하나 만들까요?</h2>
+          <p>제목과 후보만 적으면 4강부터 32강까지 자동으로 대진을 만들어요. 작성 중인 목록은 저장되고, 링크 하나로 친구도 같은 월드컵을 플레이할 수 있습니다.</p>
+          <Link className="button-primary" href="/play/custom-worldcup">지금 만들기 <span>→</span></Link>
+        </div>
+        <div className="maker-bracket" aria-hidden>
+          <div><span>치킨</span><span>피자</span><b>치킨</b></div>
+          <i>→</i>
+          <div><span>초밥</span><span>마라탕</span><b>초밥</b></div>
+          <i>→</i>
+          <strong>🏆 치킨</strong>
         </div>
       </section>
 
@@ -131,4 +153,3 @@ export default function Home() {
     </PageShell>
   );
 }
-

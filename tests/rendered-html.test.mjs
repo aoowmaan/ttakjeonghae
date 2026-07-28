@@ -46,6 +46,7 @@ test("renders commercial and representative game routes", async () => {
     "/play/room-picker",
     "/play/decision-wheel",
     "/play/food-worldcup",
+    "/play/custom-worldcup",
     "/play/travel-type",
     "/play/chaos-balance",
   ];
@@ -63,7 +64,17 @@ test("keeps the game catalog unique and substantial", async () => {
   assert.ok(slugs.length >= 27);
   assert.equal(new Set(slugs).size, slugs.length);
   assert.match(source, /food-worldcup/);
+  assert.match(source, /custom-worldcup/);
   assert.match(source, /spicy-relationship-balance/);
+});
+
+test("keeps round winners for the next world cup bracket", async () => {
+  const source = await readFile(new URL("../components/game-experience.tsx", import.meta.url), "utf8");
+  assert.match(source, /const next = \[\.\.\.nextRound, choice\]/);
+  assert.match(source, /setNextRound\(next\)/);
+  assert.match(source, /setRound\(next\)/);
+  assert.match(source, /setRunnerUp/);
+  assert.match(source, /\[4, 8, 16, 32\]/);
 });
 
 test("server-renders every published game route", async () => {

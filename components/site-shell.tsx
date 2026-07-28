@@ -15,17 +15,28 @@ export function SiteHeader() {
       <div className="shell header-inner">
         <Logo />
         <nav className="desktop-nav" aria-label="주요 메뉴">
-          <Link href="/games?category=결정">결정하기</Link>
-          <Link href="/games?category=여행">여행에서</Link>
-          <Link href="/games?category=친구">친구랑</Link>
-          <Link href="/games?category=테스트">테스트</Link>
+          <Link href="/games?category=결정">랜덤 결정</Link>
+          <Link href="/games?category=친구">같이 놀기</Link>
+          <Link href="/games?category=테스트">성향 테스트</Link>
           <Link href="/games?category=월드컵">월드컵</Link>
         </nav>
-        <Link className="header-cta" href="/games">
-          게임 찾기 <span aria-hidden>↗</span>
+        <Link className="header-cta" href="/play/custom-worldcup">
+          월드컵 만들기 <span aria-hidden>＋</span>
         </Link>
       </div>
     </header>
+  );
+}
+
+export function MobileNav() {
+  return (
+    <nav className="mobile-nav" aria-label="모바일 빠른 메뉴">
+      <Link href="/"><span>⌂</span><b>홈</b></Link>
+      <Link href="/games"><span>▦</span><b>게임</b></Link>
+      <Link className="mobile-nav-main" href="/play/custom-worldcup"><span>＋</span><b>만들기</b></Link>
+      <Link href="/games?category=테스트"><span>◇</span><b>테스트</b></Link>
+      <Link href="/games?category=여행"><span>✈</span><b>여행</b></Link>
+    </nav>
   );
 }
 
@@ -71,6 +82,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
       <SiteHeader />
       <main>{children}</main>
       <SiteFooter />
+      <MobileNav />
     </>
   );
 }
