@@ -55,7 +55,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
 
       <section className="shell play-layout">
         <div className="play-main">
-          <div className="game-window">
+          <div className="game-window" id="game-start">
             <div className="game-window-bar">
               <span><i /> LIVE GAME</span>
               <b>딱정해</b>
@@ -99,4 +99,3 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
     </PageShell>
   );
 }
-

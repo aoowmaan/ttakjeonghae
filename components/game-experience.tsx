@@ -1,10 +1,13 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Game, QuizResult } from "@/data/games";
 
 const starterNames = ["나", "민지", "도윤", "서준"];
 const shuffle = <T,>(items: T[]) => [...items].sort(() => Math.random() - 0.5);
+const tapFeedback = (duration = 12) => {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(duration);
+};
 
 function NameEditor({
   values,
@@ -20,7 +23,8 @@ function NameEditor({
   const [draft, setDraft] = useState("");
   const add = () => {
     const value = draft.trim();
-    if (!value || values.length >= 24) return;
+    if (!value || values.length >= 24 || values.includes(value)) return;
+    tapFeedback();
     onChange([...values, value]);
     setDraft("");
   };
@@ -29,7 +33,7 @@ function NameEditor({
       <div className="field-label"><span>{label}</span><b>{values.length}/24</b></div>
       <div className="chips">
         {values.map((value, index) => (
-          <button key={`${value}-${index}`} className="name-chip" onClick={() => onChange(values.filter((_, i) => i !== index))}>
+          <button key={`${value}-${index}`} className="name-chip" onClick={() => { tapFeedback(); onChange(values.filter((_, i) => i !== index)); }} aria-label={`${value} 삭제`}>
             {value}<span aria-hidden>×</span>
           </button>
         ))}
@@ -41,6 +45,8 @@ function NameEditor({
           onKeyDown={(event) => { if (event.key === "Enter") add(); }}
           placeholder={placeholder}
           aria-label={`${label} 추가`}
+          autoComplete="off"
+          enterKeyHint="done"
         />
         <button onClick={add}>추가</button>
       </div>
@@ -50,7 +56,15 @@ function NameEditor({
 
 function ResultActions({ text, onReset }: { text: string; onReset: () => void }) {
   const [copied, setCopied] = useState(false);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      tapFeedback(24);
+      window.setTimeout(() => actionsRef.current?.parentElement?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+    }
+  }, []);
   const share = async () => {
+    tapFeedback();
     const shareData = { title: "딱정해 결과", text: `${text}\n딱정해에서 함께 해봐요.`, url: window.location.href };
     if (navigator.share) {
       await navigator.share(shareData).catch(() => undefined);
@@ -61,9 +75,9 @@ function ResultActions({ text, onReset }: { text: string; onReset: () => void })
     window.setTimeout(() => setCopied(false), 1800);
   };
   return (
-    <div className="result-actions">
+    <div className="result-actions" ref={actionsRef}>
       <button className="button-primary" onClick={share}>{copied ? "복사했어요!" : "결과 공유하기"} <span>↗</span></button>
-      <button className="button-ghost" onClick={onReset}>다시 하기</button>
+      <button className="button-ghost" onClick={() => { tapFeedback(); onReset(); }}>다시 하기</button>
     </div>
   );
 }
@@ -79,6 +93,7 @@ function CardsGame({ game }: { game: Game }) {
 
   const start = () => {
     if (names.length < 2) return;
+    tapFeedback(18);
     const shuffledNames = shuffle(names);
     if (assignmentMode) {
       const roles = game.options ?? [];
@@ -102,7 +117,7 @@ function CardsGame({ game }: { game: Game }) {
   }
   return (
     <div className="engine-panel">
-      <div className="game-status"><span>카드가 준비됐어요</span><b>한 장을 골라주세요</b></div>
+      <div className="game-status"><span>카드가 준비됐어요</span><b>{assignmentMode ? "하나씩 모두 열어주세요" : "한 장을 골라주세요"}</b></div>
       <div className="pick-card-grid">
         {cards.map((name, index) => {
           const isFlipped = flipped.includes(index);
@@ -112,7 +127,7 @@ function CardsGame({ game }: { game: Game }) {
             <button
               className={`pick-card ${isFlipped ? "flipped" : ""} ${isFlipped && isWinner ? "winner" : ""}`}
               key={`${name}-${index}`}
-              onClick={() => setFlipped((current) => current.includes(index) ? current : [...current, index])}
+              onClick={() => { tapFeedback(18); setFlipped((current) => current.includes(index) ? current : [...current, index]); }}
               disabled={isFlipped}
               aria-label={`${index + 1}번 카드`}
             >
@@ -123,7 +138,7 @@ function CardsGame({ game }: { game: Game }) {
         })}
       </div>
       {winner && flipped.some((index) => cards[index] === winner) && (
-        <div className="inline-result">
+        <div className="inline-result" aria-live="polite">
           <span>오늘의 결과</span>
           <h3>{winner}</h3>
           <p>{game.options?.[0] ?? "행운의 주인공"}은 바로 당신!</p>
@@ -131,7 +146,7 @@ function CardsGame({ game }: { game: Game }) {
         </div>
       )}
       {assignmentMode && flipped.length === cards.length && (
-        <div className="inline-result">
+        <div className="inline-result" aria-live="polite">
           <span>모든 배정이 끝났어요</span>
           <h3>배정 완료!</h3>
           <p>{cards.map((name) => `${name} · ${assignments[name]}`).join(" / ")}</p>
@@ -152,6 +167,7 @@ function WheelGame({ game }: { game: Game }) {
   const [result, setResult] = useState<string | null>(null);
   const spin = () => {
     if (options.length < 2 || spinning) return;
+    tapFeedback(20);
     const index = Math.floor(Math.random() * options.length);
     const next = rotation + 1440 + (360 - (index * 360) / options.length);
     setRotation(next);
@@ -182,7 +198,7 @@ function WheelGame({ game }: { game: Game }) {
         </div>
       </div>
       {result && (
-        <div className="inline-result full-row">
+        <div className="inline-result full-row" aria-live="polite">
           <span>룰렛의 결정</span><h3>{result}</h3><p>오늘은 이걸로 딱 정했어요.</p>
           <ResultActions text={`${game.title}: ${result}`} onReset={() => setResult(null)} />
         </div>
@@ -196,6 +212,7 @@ function TeamGame({ game }: { game: Game }) {
   const [count, setCount] = useState(2);
   const [teams, setTeams] = useState<string[][] | null>(null);
   const makeTeams = () => {
+    tapFeedback(18);
     const next = Array.from({ length: count }, () => [] as string[]);
     shuffle(names).forEach((name, index) => next[index % count].push(name));
     setTeams(next);
@@ -237,7 +254,7 @@ function OrderGame({ game }: { game: Game }) {
       {!order ? (
         <>
           <NameEditor values={names} onChange={setNames} label="이름 또는 항목" />
-          <button className="button-primary button-full" onClick={() => setOrder(shuffle(names))} disabled={names.length < 2}>순서 정하기 <span>→</span></button>
+          <button className="button-primary button-full" onClick={() => { tapFeedback(18); setOrder(shuffle(names)); }} disabled={names.length < 2}>순서 정하기 <span>→</span></button>
         </>
       ) : (
         <>
@@ -256,6 +273,7 @@ function BalanceGame({ game }: { game: Game }) {
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState<number[]>([]);
   const choose = (value: number) => {
+    tapFeedback();
     const next = [...choices, value];
     setChoices(next);
     window.setTimeout(() => setIndex(index + 1), 180);
@@ -292,6 +310,7 @@ function QuizGame({ game }: { game: Game }) {
   const [scores, setScores] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
   const answer = (points: Record<string, number>) => {
+    tapFeedback();
     const next = { ...scores };
     Object.entries(points).forEach(([key, value]) => { next[key] = (next[key] ?? 0) + value; });
     if (index === questions.length - 1) {
@@ -335,6 +354,7 @@ function WorldCupGame({ game }: { game: Game }) {
   const [match, setMatch] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
   const pick = (choice: string) => {
+    tapFeedback();
     const next = [...nextRound, choice];
     if (match + 2 >= round.length) {
       if (next.length === 1) setWinner(choice);
@@ -373,8 +393,8 @@ function SplitGame({ game }: { game: Game }) {
   return (
     <div className="engine-panel split-layout">
       <div className="split-fields">
-        <label><span>총 결제금액</span><div><input type="number" min="0" value={amount} onChange={(event) => setAmount(Math.max(0, Number(event.target.value)))} /><b>원</b></div></label>
-        <label><span>함께한 인원</span><div className="stepper"><button onClick={() => setPeople(Math.max(2, people - 1))}>−</button><strong>{people}명</strong><button onClick={() => setPeople(Math.min(30, people + 1))}>＋</button></div></label>
+        <label><span>총 결제금액</span><div><input type="number" inputMode="numeric" min="0" value={amount} onChange={(event) => setAmount(Math.max(0, Number(event.target.value)))} /><b>원</b></div></label>
+        <label><span>함께한 인원</span><div className="stepper"><button aria-label="인원 줄이기" onClick={() => { tapFeedback(); setPeople(Math.max(2, people - 1)); }}>−</button><strong>{people}명</strong><button aria-label="인원 늘리기" onClick={() => { tapFeedback(); setPeople(Math.min(30, people + 1)); }}>＋</button></div></label>
       </div>
       <div className="split-result">
         <span>한 사람당</span><h3>{formatted.format(base)}<small>원</small></h3>
@@ -390,6 +410,7 @@ function MissionsGame({ game }: { game: Game }) {
   const [current, setCurrent] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const draw = () => {
+    tapFeedback(18);
     const pool = missions.filter((mission) => !history.includes(mission));
     const picked = shuffle(pool.length ? pool : missions)[0];
     setCurrent(picked);
