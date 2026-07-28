@@ -72,12 +72,22 @@ function CardsGame({ game }: { game: Game }) {
   const [names, setNames] = useState(starterNames);
   const [started, setStarted] = useState(false);
   const [winner, setWinner] = useState<string | null>(null);
+  const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [flipped, setFlipped] = useState<number[]>([]);
   const cards = useMemo(() => (started ? shuffle(names) : names), [started, names]);
+  const assignmentMode = (game.options?.length ?? 0) > 1;
 
   const start = () => {
     if (names.length < 2) return;
-    setWinner(shuffle(names)[0]);
+    const shuffledNames = shuffle(names);
+    if (assignmentMode) {
+      const roles = game.options ?? [];
+      setAssignments(Object.fromEntries(shuffledNames.map((name, index) => [name, roles[index % roles.length]])));
+      setWinner(null);
+    } else {
+      setAssignments({});
+      setWinner(shuffledNames[0]);
+    }
     setFlipped([]);
     setStarted(true);
   };
@@ -97,6 +107,7 @@ function CardsGame({ game }: { game: Game }) {
         {cards.map((name, index) => {
           const isFlipped = flipped.includes(index);
           const isWinner = winner === name;
+          const cardResult = assignmentMode ? assignments[name] : isWinner ? game.options?.[0] ?? "당첨!" : "통과";
           return (
             <button
               className={`pick-card ${isFlipped ? "flipped" : ""} ${isFlipped && isWinner ? "winner" : ""}`}
@@ -105,8 +116,8 @@ function CardsGame({ game }: { game: Game }) {
               disabled={isFlipped}
               aria-label={`${index + 1}번 카드`}
             >
-              <span className="card-face card-back"><i>딱!</i><small>{index + 1}</small></span>
-              <span className="card-face card-front"><strong>{isWinner ? game.options?.[0] ?? "당첨!" : "통과"}</strong><b>{name}</b><em>{isWinner ? "🎉" : "휴—"}</em></span>
+              <span className="card-face card-back" aria-hidden={isFlipped}><i>딱!</i><small>{index + 1}</small></span>
+              <span className="card-face card-front" aria-hidden={!isFlipped}><strong>{cardResult}</strong><b>{name}</b><em>{assignmentMode || isWinner ? "🎉" : "휴—"}</em></span>
             </button>
           );
         })}
@@ -117,6 +128,17 @@ function CardsGame({ game }: { game: Game }) {
           <h3>{winner}</h3>
           <p>{game.options?.[0] ?? "행운의 주인공"}은 바로 당신!</p>
           <ResultActions text={`${game.title}: ${winner}`} onReset={() => setStarted(false)} />
+        </div>
+      )}
+      {assignmentMode && flipped.length === cards.length && (
+        <div className="inline-result">
+          <span>모든 배정이 끝났어요</span>
+          <h3>배정 완료!</h3>
+          <p>{cards.map((name) => `${name} · ${assignments[name]}`).join(" / ")}</p>
+          <ResultActions
+            text={`${game.title}\n${cards.map((name) => `${name}: ${assignments[name]}`).join("\n")}`}
+            onReset={() => setStarted(false)}
+          />
         </div>
       )}
     </div>
@@ -403,4 +425,3 @@ export function GameExperience({ game }: { game: Game }) {
   const Engine = engines[game.engine];
   return <div ref={wrapRef} className="game-experience"><Engine game={game} /></div>;
 }
-

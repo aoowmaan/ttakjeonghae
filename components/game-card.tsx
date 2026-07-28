@@ -19,7 +19,7 @@ export function GameCard({ game, size = "regular" }: { game: Game; size?: "regul
       </div>
       <div className="card-meta">
         <span>{game.category}</span>
-        <span>{game.plays}</span>
+        <span>가입 없이 시작</span>
       </div>
     </Link>
   );

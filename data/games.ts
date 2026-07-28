@@ -271,7 +271,7 @@ export const games: Game[] = [
     slug: "first-impression", title: "나의 첫인상 온도 테스트", shortTitle: "첫인상 온도", eyebrow: "친구에게 물어보기", description: "차가워 보이지만 따뜻한 사람? 첫인상과 실제 모습의 간극을 확인해요.", category: "테스트", engine: "quiz", emoji: "🌡️", accent: "#ef6b4d", plays: "이번 주 2.2K", tags: ["심리테스트", "첫인상", "성향"], instructions: baseInstructions.quiz, questions: friendshipQuiz, results: friendshipResults, longDescription: "사람들과 관계를 맺는 방식으로 첫인상 뒤에 숨은 당신의 우정 캐릭터를 알아봅니다. 결과는 재미를 위한 성향 콘텐츠이며 전문적인 심리 진단이 아닙니다.",
   },
   {
-    slug: "packing-order", title: "여행 준비 담당 배정", shortTitle: "준비 담당", eyebrow: "출발 전 체크", description: "예약 확인, 상비약, 간식, 길찾기. 담당을 랜덤으로 나눠요.", category: "여행", engine: "teams", emoji: "✅", accent: "#389a65", plays: "이번 주 2.0K", tags: ["여행", "준비", "팀"], instructions: baseInstructions.teams, longDescription: "여행 준비를 한 사람에게 몰아주지 않도록 인원을 랜덤 팀으로 나눈 뒤 각 팀에 할 일을 붙여 활용할 수 있습니다.",
+    slug: "packing-order", title: "여행 준비 담당 배정", shortTitle: "준비 담당", eyebrow: "출발 전 체크", description: "예약 확인, 상비약, 간식, 길찾기. 담당을 랜덤으로 나눠요.", category: "여행", engine: "cards", emoji: "✅", accent: "#389a65", plays: "이번 주 2.0K", tags: ["여행", "준비", "담당"], instructions: baseInstructions.cards, options: ["예약 확인", "상비약", "간식", "길찾기"], longDescription: "여행 준비를 한 사람에게 몰아주지 않도록 참가자마다 준비 업무를 하나씩 공정하게 배정합니다. 카드를 모두 뒤집으면 전체 배정 결과를 한 번에 공유할 수 있습니다.",
   },
   {
     slug: "weekend-wheel", title: "이번 주말 뭐 하지?", shortTitle: "주말 룰렛", eyebrow: "무료한 날", description: "산책, 전시, 드라이브, 낮잠까지. 오늘의 시간을 돌려봐요.", category: "결정", engine: "wheel", emoji: "🌤️", accent: "#ec9b24", plays: "이번 주 1.9K", tags: ["주말", "룰렛", "데이트"], instructions: baseInstructions.wheel, options: ["동네 산책", "새 카페", "전시 보기", "근교 드라이브", "집에서 요리", "낮잠과 영화"], longDescription: "특별한 계획이 없는 주말, 하고 싶은 후보를 넣고 즉흥적인 하루를 시작하는 룰렛입니다.",

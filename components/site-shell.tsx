@@ -48,7 +48,7 @@ export function SiteFooter() {
             <strong>딱정해</strong>
             <Link href="/about">서비스 소개</Link>
             <Link href="/help">이용 안내</Link>
-            <a href="mailto:hello@ttak.fun">문의하기</a>
+            <a href="https://github.com/aoowmaan/ttakjeonghae/issues" target="_blank" rel="noreferrer">문의하기</a>
           </div>
           <div>
             <strong>정책</strong>
@@ -74,4 +74,3 @@ export function PageShell({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-
